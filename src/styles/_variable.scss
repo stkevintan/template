@@ -1,0 +1,64 @@
+$containerWidth: 1170px;
+$containerPadding:15px;
+$gridWidth:84px;
+$gridGap:12px;
+$gridColumns:12;
+//text
+$textColorStandard: #303646;
+$textColorContent: #545968;
+$textColorComment: #afafaf;
+$textColorLink: #03638f;
+$textColorError: #d31a11;
+$textColorStandard2:#bfcad3;
+$textColorComment2:#939393;
+$textColorWhite:#ffffff;
+
+//input
+$borderColor:#d6d6d6;
+$borderColorActive:#54a4cf;
+
+//button
+$bgColor:#e4e4e4;
+$bgColorActive:#545968;
+$bgColorPrimary:#1d90d0;
+$bgColorPrimaryActive:#0a79b7;
+
+//desc
+$discSize:8px;
+$discColor:#a8a8a8;
+$discColorPrimary:#3fa5bd;
+$discColorSuccess:#4dbd74;
+$discColorError:#ff8834;
+
+
+@mixin h-padding($value) {
+  padding-left:$value;
+  padding-right:$value;
+}
+@mixin v-padding($value){
+  padding-top:$value;
+  padding-bottom:$value;
+}
+@mixin h-margin($value){
+  margin-left:$value;
+  margin-right:$value;
+}
+@mixin v-margin($value){
+  margin-top:$value;
+  margin-bottom:$value;
+}
+@mixin genGap($type,$value){
+  @if $type == margin{
+    @each $verbose,$directory in (mgl,left),(mgr,right),(mgt,top),(mgb,bottom){
+      .f-#{$verbose}_#{$value}{
+        #{$type}-#{$directory}:$value * 1px;
+      }
+    }
+  }@else{
+    @each $verbose,$directory in (pdl,left),(pdr,right),(pdt,top),(pdb,bottom){
+      .f-#{$verbose}_#{$value}{
+        #{$type}-#{$directory}:$value * 1px;
+      }
+    }
+  }
+}

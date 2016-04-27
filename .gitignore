@@ -1,0 +1,7 @@
+.idea/
+dist/
+release/
+bower_components/
+node_modules/
+.directory
+upload/

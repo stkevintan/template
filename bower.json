@@ -1,0 +1,22 @@
+{
+  "name": "sales",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "Kevin Tan"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "1.12.1",
+    "normalize-css": "normalize.css#^4.1.1"
+  },
+  "private": true
+}
