@@ -51,7 +51,7 @@ $discColorError:#ff8834;
   @if $type == margin{
     @each $verbose,$directory in (mgl,left),(mgr,right),(mgt,top),(mgb,bottom){
       .f-#{$verbose}_#{$value}{
-        #{$type}-#{$directory}:$value * 1px;
+        #{$type}-#{$directory}: $value * 1px;
       }
     }
   }@else{

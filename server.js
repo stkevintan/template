@@ -1,29 +1,41 @@
 /**
  * Created by kevin on 16-4-12.
  */
-'use strict'
-
 const app = require('express')();
 const fs = require('fs');
 const path = require('path');
-
-module.exports = (opts)=> {
-    const baseDir = path.join(__dirname, opts.dest);
-    app.get('/map', (req, res)=> {
-        const dir = path.join(baseDir, req.query.dir || '');
-        const files = fs.readdirSync(dir);
-        let result = '<ul>';
-        files.forEach((file)=> {
-            if (!fs.lstatSync(path.join(dir, file)).isDirectory()) {
-                result += `<li><a href="${file}" target="viewbox">${file.substr(0, file.lastIndexOf('.')) || file}</a></li>`;
+const webpack = require('webpack');
+const webpackDevMiddleware = require('webpack-dev-middleware');
+const webpackHotMiddleware = require('webpack-hot-middleware');
+const webpackConfig = require('./webpack.config');
+module.exports = (opts) => {
+  const baseDir = path.join(__dirname, opts.dest);
+  webpackConfig.entry.app.unshift('webpack-hot-middleware/client?reload=true');
+  webpackConfig.output.path = path.join(baseDir, '/assets/js');
+  webpackConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
+  const compiler = webpack(webpackConfig);
+  app.use(webpackDevMiddleware(compiler, {
+    noInfo: true,
+    contentBase: baseDir,
+    publicPath: webpackConfig.output.publicPath,
+  }));
+  app.use(webpackHotMiddleware(compiler));
+  app.get('/map', (req, res) => {
+    const dir = path.join(baseDir, req.query.dir || '');
+    const files = fs.readdirSync(dir);
+    let result = '<ul>';
+    files.forEach((file) => {
+      if (!fs.lstatSync(path.join(dir, file)).isDirectory()) {
+        result += `<li><a href="${file}" target="viewbox">
+          ${file.substr(0, file.lastIndexOf('.')) || file}</a></li>`;
             // } else {
             //     result += `<li><a href="?dir=${file}" >${file} -></a></li>`;
-            }
-        });
-        result += '</ul>';
-        result += `<div class="main"><div class="mark"><</div><iframe name="viewbox"></iframe></div>`;
-        //styles
-        result += `
+      }
+    });
+    result += '</ul>';
+    result += '<div id="main"><div id="mark"><</div><iframe name="viewbox"></iframe></div>';
+        // styles
+    result += `
     <style>
         body{
             margin:0;
@@ -42,7 +54,7 @@ module.exports = (opts)=> {
             height:100%;
             overflow:auto;
         }
-        .main{
+        #main{
             position:absolute;
             top:0;
             left:220px;
@@ -52,7 +64,7 @@ module.exports = (opts)=> {
             box-shadow: -2px 0 3px rgba(0, 0, 0, 0.35);
             transition:all 0.2s ease-in;
         }
-        .main.expanded{
+        #main.expanded{
             width:100%;
             left:0;
         }
@@ -61,7 +73,7 @@ module.exports = (opts)=> {
             height:100%;
             border:none;
         }
-        .mark{
+        #mark{
             position:absolute;
             cursor:pointer;
             left:0;
@@ -76,11 +88,11 @@ module.exports = (opts)=> {
             color:#fff;
             transition:opacity .2s ease-in;
         }
-        .mark:hover{
+        #mark:hover{
            opacity:1;
         }
         ul a{
-            text-decoration:none; 
+            text-decoration:none;
             color:#444;
             display:block;
             padding: 0 40px 0 20px;
@@ -100,10 +112,10 @@ module.exports = (opts)=> {
     <script>
         var ul = document.querySelector('ul');
         var a = ul.querySelectorAll('a');
-        var main = document.querySelector('.main');
-        var mark = main.querySelector('.mark');
+        var main = document.querySelector('#main');
+        var mark = main.querySelector('#mark');
         var iframe = main.querySelector('iframe');
-        
+
         mark.addEventListener('click',function(e){
             main.className = 'content' + (mark.innerText === '<'?' expanded':'');
             mark.innerText = mark.innerText === '<'?'>':'<';
@@ -117,15 +129,13 @@ module.exports = (opts)=> {
                 //fix 404 bug
                 win.location.reload();
                 return;
-            } 
+            }
             var name = win.location.pathname.match(/[^\/\.]+/)[0];
             for(var i=0;i<a.length;i++)a[i].className = a[i].innerText === name?'active':'';
             window.location.hash = name;
         }
-    </script>
-    `;
-        res.send('<!DOCTYPE html>' + result);
-    });
-
-    return app;
+    </script>`;
+    res.send(`<!DOCTYPE html>${result}`);
+  });
+  return app;
 };
