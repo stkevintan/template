@@ -1,12 +1,11 @@
 body {
   background-color: #ececec;
-  box-sizing:border-box;
-  font-family: Microsoft Yahei, "Helvetica Neue", Helvetica, Source Han Sans CN, WenQuanYi Micro Hei, Hiragino Sans GB, sans-serif;
-  color: #303646;
+  font-family:Helvetica Neue, Helvetica,Hiragino Sans GB, Source Han Sans CN, WenQuanYi Micro Hei, Microsoft Yahei, Simsun, Arial, sans-serif;
+  color: #fff;
   font-size:14px;
 }
 *{
-  box-sizing: inherit;
+  box-sizing: border-box;
 }
 a,button{
   outline:none;
