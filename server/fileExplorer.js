@@ -1,43 +1,9 @@
-const app = require('express')();
-const fs = require('fs');
+const express = require('express');
+const router = express.Router();
 const path = require('path');
-const webpack = require('webpack');
-const webpackDevMiddleware = require('webpack-dev-middleware');
-const webpackHotMiddleware = require('webpack-hot-middleware');
-const webpackConfig = require('./webpack.config');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-module.exports = (opts) => {
-  const baseDir = path.join(__dirname, opts.dest);
-  webpackConfig.output.path = path.join(baseDir, '/assets/js');
-  webpackConfig.plugins.push(new ExtractTextPlugin('../css/[name].css', {
-    disable: !opts.write,
-  }));
-  if (opts.write) {
-    webpackConfig.plugins.push(new webpack.optimize.UglifyJsPlugin({
-      compress: { warnings: false },
-    }));
-    webpack(webpackConfig).run(err => err && console.log('[webpack compiled]', err));
-    // 还原
-    webpackConfig.plugins.pop();
-  }
-  // https://segmentfault.com/a/1190000004280859
-  webpackConfig.devtool = 'cheap-module-source-map';
-  for (const key of Object.keys(webpackConfig.entry)) {
-    let val = webpackConfig.entry[key];
-    if (!Array.isArray(val))val = Array.from(val);
-    val.unshift('webpack-hot-middleware/client?reload=true');
-  }
-  webpackConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
-  webpackConfig.plugins.push(new webpack.optimize.OccurenceOrderPlugin());
-  const compiler = webpack(webpackConfig);
-  app.use(webpackDevMiddleware(compiler, {
-    noInfo: true,
-    contentBase: baseDir,
-    publicPath: webpackConfig.output.publicPath,
-  }));
-  app.use(webpackHotMiddleware(compiler));
-  // for file map
-  app.get('/map', (req, res) => {
+const fs = require('fs');
+module.exports = baseDir => {
+  router.get('/', (req, res) => {
     const dir = path.join(baseDir, req.query.dir || '');
     const files = fs.readdirSync(dir);
     let result = '<ul>';
@@ -45,6 +11,8 @@ module.exports = (opts) => {
       if (!fs.lstatSync(path.join(dir, file)).isDirectory()) {
         result += `<li><a href="${file}" target="viewbox">
           ${file.substr(0, file.lastIndexOf('.')) || file}</a></li>`;
+            // } else {
+            //     result += `<li><a href="?dir=${file}" >${file} -></a></li>`;
       }
     });
     result += '</ul>';
@@ -152,5 +120,5 @@ module.exports = (opts) => {
     </script>`;
     res.send(`<!DOCTYPE html>${result}`);
   });
-  return app;
+  return router;
 };

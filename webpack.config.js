@@ -1,19 +1,16 @@
 /* eslint-env node */
 const webpack = require('webpack');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-// const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const cssnano = require('cssnano');
 const autoprefixer = require('autoprefixer');
 module.exports = {
   entry: {
     bundle: './src/scripts/entry.js',
-    styles: ['normalize.css', './src/styles/styles.scss'],
   },
   output: {
     filename: '[name].js',
     path: `${__dirname}/assets/js`,
-    publicPath: '/assets/js',
+    publicPath: 'assets/js',
   },
   module: {
     loaders: [
@@ -50,12 +47,6 @@ module.exports = {
         loader: 'url?limit=10000&mimetype=image/svg+xml',
       },
       // {test: /bootstrap-sass\/assets\/javascripts\//, loader: 'imports?jQuery=jquery' }
-      {
-        test: /\.(scss|css|sass)$/,
-        loader: ExtractTextPlugin.extract('style', ['css', 'postcss', 'sass'], {
-          publicPath: '/assets/css',
-        }),
-      },
       {
         test: /\.(png|jvendorpg)$/,
         loader: 'url-loader?limit=10000&name=[name].[ext]',

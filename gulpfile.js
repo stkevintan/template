@@ -1,5 +1,4 @@
 /* eslint-env node */
- /* eslint no-param-reassign: "off" */
 // tools
 const opn = require('opn');
 const ip = require('ip');
@@ -13,67 +12,73 @@ const cssnano = require('cssnano');
 const del = require('del');
 const postcss = require('gulp-postcss');
 const sass = require('gulp-sass');
-const pug = require('gulp-pug');
+const jade = require('gulp-pug');
 const connect = require('gulp-connect');
 const rename = require('gulp-rename');
 const plumber = require('gulp-plumber');
-const filter = require('gulp-filter');
-const inject = require('gulp-inject-string');
+const archiver = require('gulp-archiver');
+
+// webpack
+const webpack = require('webpack');
+const wc = require('./webpack.config');
+const pc = require('./package');
+
 // settings
 const opts = minimist(process.argv.slice(2), {
-  boolean: ['compress', 'write'],
   string: 'open',
+  boolean: 'release',
   alias: {
-    c: 'compress',
     o: 'open',
-    w: 'write',
+    r: 'release',
   },
-  default: { compress: false, open: undefined, write: false },
+  default: { release: false, open: undefined },
 });
 
-const DESTROOT = opts.compress ? 'release' : 'dist';
-const app = require('./server')({
-  dest: DESTROOT,
-  write: opts.write,
-});
+const DESTROOT = opts.release ? 'release' : 'dist';
+const app = require('./server')({ dest: DESTROOT });
 
 const HOST = '0.0.0.0';
 const PORT = 8080;
 const PATHS = {
+  scripts: 'src/scripts/**/*.js',
   styles: 'src/styles/**/*.scss',
-  templates: 'src/templates/**/*.jade',
+  templates: 'src/templates/*.jade',
   images: 'src/images/**/*',
   fonts: 'src/fonts/**/*',
 };
-const pattern = /\/[^_][^\/]*$/;// filter vinyl object
-// // styles
-// gulp.task('del:styles', () => del(`${DESTROOT}/assets/css/*`));
-// gulp.task('styles', ['del:styles'], () => gulp.src(PATHS.styles)
-//   .pipe(plumber())
-//   .pipe(filter(file => pattern.test(file.path)))
-//   .pipe(sass({
-//     outputStyle: opts.compress ? 'compressed' : 'Nested',
-//   }))
-//   .on('error', sass.logError)
-//   .pipe(postcss([
-//     autoprefixer(),
-//     cssnano(),
-//   ]))
-//   .pipe(gulp.dest(`${DESTROOT}/assets/css`))
-//   .pipe(connect.reload())
-// );
+
+// script
+gulp.task('del:scripts', () => del(`${DESTROOT}/assets/js/*`));
+gulp.task('scripts', ['del:scripts'], cb => {
+  wc.output.path = `${DESTROOT}/assets/js/`;
+  wc.output.publicPath = wc.output.publicPath.substr(1);
+  wc.plugins.push(new webpack.optimize.UglifyJsPlugin({
+    compress: { warnings: false },
+  }));
+  webpack(wc).run(err => (err ? console.log(err) : cb()));
+});
+
+// styles
+gulp.task('del:styles', () => del(`${DESTROOT}/assets/css/*`));
+gulp.task('styles', ['del:styles'], () => gulp.src(PATHS.styles)
+  .pipe(plumber())
+  .pipe(sass())
+  .on('error', sass.logError)
+  .pipe(postcss([
+    autoprefixer(),
+    cssnano(),
+  ]))
+  .pipe(gulp.dest(`${DESTROOT}/assets/css`))
+  .pipe(connect.reload())
+);
 
 // html
 gulp.task('del:templates', () => del(`${DESTROOT}/*.html`));
 gulp.task('templates', ['del:templates'], () => gulp.src(PATHS.templates)
   .pipe(plumber())
-  .pipe(filter(file => pattern.test(file.path)))
-  .pipe(pug({
+  .pipe(jade({
     pretty: true,
   }))
-  .pipe(opts.write ?
-    inject.after('</title>', '\n<link rel="stylesheet" href="assets/css/styles.css">') :
-    inject.before('</body>', '\n<script src="assets/js/styles.js"></script>'))
   .pipe(gulp.dest(`${DESTROOT}/`))
   .pipe(connect.reload())
 );
@@ -82,7 +87,6 @@ gulp.task('templates', ['del:templates'], () => gulp.src(PATHS.templates)
 gulp.task('del:images', () => del(`${DESTROOT}/assets/img/*`));
 gulp.task('images', () => gulp.src(PATHS.images)
   .pipe(plumber())
-  .pipe(filter(file => pattern.test(file.path)))
   .pipe(gulp.dest(`${DESTROOT}/assets/img/`))
   .pipe(connect.reload())
 );
@@ -91,34 +95,38 @@ gulp.task('images', () => gulp.src(PATHS.images)
 gulp.task('del:fonts', () => del(`${DESTROOT}/assets/fonts/*`));
 gulp.task('fonts', ['del:fonts'], () => gulp.src(PATHS.fonts)
   .pipe(plumber())
-  .pipe(filter(file => pattern.test(file.path)))
-  .pipe(rename(path => { path.dirname = ''; }))
+  .pipe(rename(path => { /* eslint no-param-reassign: "off" */path.dirname = ''; }))
   .pipe(gulp.dest(`${DESTROOT}/assets/fonts/`))
   .pipe(connect.reload())
 );
 
+
 // build files & open server
-gulp.task('default', ['templates', 'images', 'fonts'], () => {
-  gulp.watch(PATHS.templates, ['templates']);
-  // gulp.watch(PATHS.styles, ['styles']);
+const devDep = ['templates', 'styles', 'images', 'fonts'];
+const releaseDep = [...devDep, 'scripts'];
+
+gulp.task('default', opts.release ? devDep : releaseDep, () => {
+  gulp.watch(PATHS.styles, ['styles']);
   gulp.watch(PATHS.images, ['images']);
   gulp.watch(PATHS.fonts, ['fonts']);
-  gulp.watch(PATHS.images, ['images']);
+  gulp.watch('src/templates/**/*.jade', ['templates']);
   connect.server({
     root: `${DESTROOT}`,
     port: PORT,
     host: HOST,
     livereload: true,
-    middleware() {
-      return [app];
-    },
+    middleware: () => [app],
   });
   if (opts.open !== undefined) {
     opn(`http://${HOST === 'localhost' ? HOST : ip.address()}:${PORT}/map`, {
       app: opts.open,
-    }).then(() => {
-      gutil.log('browser has opened');
-    });
+    }).then(() => {});
   }
   gutil.log('[gulp server started]', `http://${HOST === 'localhost' ? HOST : ip.address()}:${PORT}/map`);
+
+  if (opts.release) {
+    gulp.src(`${DESTROOT}/**/*`)
+      .pipe(archiver(`${pc.name}.${Date.now()}.tar`))
+      .pipe(gulp.dest('packages'));
+  }
 });
