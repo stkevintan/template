@@ -1,8 +1,5 @@
 /* eslint-env node */
 const webpack = require('webpack');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
-const cssnano = require('cssnano');
-const autoprefixer = require('autoprefixer');
 module.exports = {
   entry: {
     bundle: './src/scripts/entry.js',
@@ -53,7 +50,6 @@ module.exports = {
       },
     ],
   },
-  postcss: () => ({ defaults: [cssnano, autoprefixer] }),
   resolve: {
     root: [
     //  path.resolve('./src/components/'),
@@ -63,16 +59,8 @@ module.exports = {
     },
   },
   plugins: [
-
     new webpack.BannerPlugin(`This file is created by Kevin Tan
       ${(new Date()).toLocaleDateString()}`),
-    new CleanWebpackPlugin(['dist/assets/js',
-    'release/assets/js',
-    'dist/assets/css',
-    'release/assets/css'], {
-      verbose: true,
-      dry: false,
-    }),
     new webpack.optimize.CommonsChunkPlugin({
       name: 'vendor',
       filename: 'vendor.bundle.js',
